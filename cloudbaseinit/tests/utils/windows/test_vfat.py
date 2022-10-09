@@ -31,7 +31,8 @@ class TestVfat(unittest.TestCase):
 
     def _test_is_vfat_drive(self, execute_process_value,
                             expected_logging,
-                            expected_response):
+                            expected_response,
+                            drive_label='config-2'):
 
         mock_osutils = mock.Mock()
         mock_osutils.execute_process.return_value = execute_process_value
@@ -41,7 +42,8 @@ class TestVfat(unittest.TestCase):
             with testutils.ConfPatcher('mtools_path', 'mtools_path'):
 
                 response = vfat.is_vfat_drive(mock_osutils,
-                                              mock.sentinel.drive)
+                                              mock.sentinel.drive,
+                                              drive_label)
 
                 mdir = os.path.join(CONF.mtools_path, "mlabel.exe")
                 mock_osutils.execute_process.assert_called_once_with(
@@ -104,6 +106,20 @@ class TestVfat(unittest.TestCase):
         self._test_is_vfat_drive(execute_process_value=execute_process_value,
                                  expected_logging=expected_logging,
                                  expected_response=expected_response)
+
+    def test_is_vfat_drive_works_alternate_drive_label(self):
+        mock_out = b"Volume label is CIDATA    \r\n"
+        expected_logging = [
+            "Obtained label information for drive %r: %r"
+            % (mock.sentinel.drive, mock_out)
+        ]
+        execute_process_value = (mock_out, None, 0)
+        expected_response = True
+
+        self._test_is_vfat_drive(execute_process_value=execute_process_value,
+                                 expected_logging=expected_logging,
+                                 expected_response=expected_response,
+                                 'cidata')
 
     def test_is_vfat_drive_with_wrong_label(self):
         mock_out = b"Not volu label  \r\n"
